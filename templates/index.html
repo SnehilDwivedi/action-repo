@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GitHub Events Monitor</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Recent GitHub Events</h1>
+        <div id="events-container">
+            <!-- Events will be populated here by JavaScript -->
+        </div>
+    </div>
+
+    <script>
+        function formatEvent(event) {
+            const date = new Date(event.timestamp);
+            const formattedDate = date.toLocaleString('en-US', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                timeZone: 'UTC',
+                timeZoneName: 'short'
+            });
+
+            switch(event.action) {
+                case 'PUSH':
+                    return `${event.author} pushed to "${event.to_branch}" on ${formattedDate}`;
+                case 'PULL_REQUEST':
+                    return `${event.author} submitted a pull request from "${event.from_branch}" to "${event.to_branch}" on ${formattedDate}`;
+                case 'MERGE':
+                    return `${event.author} merged branch "${event.from_branch}" to "${event.to_branch}" on ${formattedDate}`;
+                default:
+                    return JSON.stringify(event);
+            }
+        }
+
+        function fetchEvents() {
+            fetch('/api/events')
+                .then(response => response.json())
+                .then(events => {
+                    const container = document.getElementById('events-container');
+                    container.innerHTML = '';
+                    
+                    events.forEach(event => {
+                        const eventElement = document.createElement('div');
+                        eventElement.className = 'event';
+                        eventElement.textContent = formatEvent(event);
+                        container.appendChild(eventElement);
+                    });
+                })
+                .catch(error => console.error('Error fetching events:', error));
+        }
+
+        // Fetch events immediately and then every 15 seconds
+        fetchEvents();
+        setInterval(fetchEvents, 15000);
+    </script>
+</body>
+</html>
